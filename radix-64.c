@@ -6,90 +6,108 @@
 #define UINT unsigned int
 #define Byte unsigned char
 
-void print_bin(char *str, UINT data) { // 데이터를 이진수 문자열로 출력한다.
-    int i;
-
-    printf("%s", str);
-    for(i=sizeof(UINT)*8-1; i>=0; i--) {
-        if(data & ((int)pow(2, i)))
-            printf("%d", 1);
-        else
-            printf("%d", 0);
-        if(i%4==0)
-            printf(" ");
-    }
-    printf("\n");
-}
-
-char mapping(Byte value) {
-    if(value < 26) {
+char mapping324(Byte value) {
+    if (value < 26)
         return 'A' + value;
-    }
-    else if(value >= 52) {
-        if(value == 62)
-            return '+';
-        else if(value == 63)
-            return '/';
-        return '0' + (value - 52);
-    }
-    else {
+    else if (value < 52)
         return 'a' + (value - 26);
-    }
+    else if (value < 62)
+        return '0' + (value - 52);
+    else if (value == 62)
+        return '+';
+    else
+        return '/';
 }
 
-void trans(UINT block, char ascii[5], int padding) {
+Byte mapping423(char value) {
+    if (value < 'a')
+        return value - 'A';
+    else if (value < '0')
+        return (value + 26) - 'a';
+    else if (value < '+')
+        return (value + 52) - '0';
+    else if (value == '+')
+        return 62;
+    else
+        return 63;
+}
+
+void b3tob4(UINT block, char ascii[5], int padding) {
     UINT getmask = 0x00FC0000;
 
-    ascii[0] = mapping((block & getmask) >> 18);
-    ascii[1] = mapping((block & (getmask >> 6)) >> 12);
-    if(padding < -1) {
+    ascii[0] = mapping324((block & getmask) >> 18);
+    ascii[1] = mapping324((block & (getmask >> 6)) >> 12);
+    if(padding < -1)
         ascii[2] = '=';
-    }
-    else {
-        ascii[2] = mapping((block & (getmask >> 12)) >> 6);
-    }
-    if(padding < 0) {
+    else
+        ascii[2] = mapping324((block & (getmask >> 12)) >> 6);
+    if(padding < 0)
         ascii[3] = '=';
-    }
-    else {
-        ascii[3] = mapping(block & (getmask >> 18));
-    }
+    else
+        ascii[3] = mapping324(block & (getmask >> 18));
     ascii[4] = 0;
 }
 
-void encoding(char string[]) {
+void b4tob3(UINT block, Byte ascii[4], int padding) {
+    UINT getmask = 0x00FF0000;
+
+    ascii[0] = mapping423((block & getmask) >> 16);
+    ascii[1] = mapping423((block & (getmask >> 8)) >> 8);
+    ascii[2] = mapping423((block & (getmask >> 16)));
+    ascii[3] = 0;
+}
+
+void encoding(char str[]) {
     int i=0;
     int buff_size;
     int str_size;
     UINT block;
     char *buff;
 
-    str_size = strlen(string);
+    str_size = strlen(str);
     buff_size = ceil(sizeof(char) * (str_size * 1.2));
     buff = (char*)malloc(buff_size);
     memset(buff, 0, buff_size);
 
     while(i<str_size) {
         block = 0;
-        block = string[i++];
+        block = str[i++];
         block = block << 8;
-        block = block | string[i++];
+        block = block | str[i++];
         block = block << 8;
-        block = block | string[i++];
-        trans(block, buff+((i-3)/3*4), str_size-i);
+        block = block | str[i++];
+        b3tob4(block, buff+((i-3)/3*4), str_size-i);
     }
 
-    printf("%d\n", strlen(buff));
     printf("%s\n", buff);
-    for(i=0; i<strlen(buff); i++) {
-        printf("%02x ", buff[i]);
-        if(i%4 == 3) {
-            printf(" ");
-        }
-        if(i%16 == 15) {
-            printf("\n");
-        }
+    free(buff);
+}
+
+void decoding(char str[]) {
+    int i=0;
+    int buff_size;
+    int str_size;
+    UINT block;
+    char *buff;
+
+    str_size = strlen(str);
+    buff_size = ceil(sizeof(char) * (str_size * 1.2));
+    buff = (char*)malloc(buff_size);
+    memset(buff, 0, buff_size);
+
+    while(i<str_size) {
+        block = 0;
+        block = str[i++];
+        block = block << 6;
+        block = block | str[i++];
+        block = block << 6;
+        block = block | str[i++];
+        block = block << 6;
+        block = block | str[i++];
+        b3tob4(block, buff+((i-3)/3*4));
     }
+
+    printf("%s\n", buff);
     free(buff);
 }
 
