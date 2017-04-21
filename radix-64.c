@@ -125,7 +125,6 @@ int main(int argc, char *argv[]) {
     decode = (Byte*)malloc(sizeof(char) * str_size);
     memset(decode, 0, str_size);
 
-
     encoding(argv[1], buff);
     printf("%s\n", buff);
     decoding(buff, decode);
