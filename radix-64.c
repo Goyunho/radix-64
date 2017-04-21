@@ -6,7 +6,22 @@
 #define UINT unsigned int
 #define Byte unsigned char
 
-char mapping324(Byte value) {
+void print_bin(char *str, UINT data) { // 데이터를 이진수 문자열로 출력한다.
+    int i;
+
+    printf("%s", str);
+    for(i=sizeof(UINT)*8-1; i>=0; i--) {
+        if(data & ((int)pow(2, i)))
+            printf("%d", 1);
+        else
+            printf("%d", 0);
+        if(i%4==0)
+            printf(" ");
+    }
+    printf("\n");
+}
+
+char map_enc(Byte value) {
     if (value < 26)
         return 'A' + value;
     else if (value < 52)
@@ -18,15 +33,14 @@ char mapping324(Byte value) {
     else
         return '/';
 }
-
-Byte mapping423(char value) {
-    if (value < 'a')
+Byte map_dec(char value) {
+    if (value >= 'a')
+        return 26 + (value - 'a');
+    else if(value >= 'A')
         return value - 'A';
-    else if (value < '0')
-        return (value + 26) - 'a';
-    else if (value < '+')
-        return (value + 52) - '0';
-    else if (value == '+')
+    else if(value >= '0')
+        return 52 + (value - '0');
+    else if(value == '+')
         return 62;
     else
         return 63;
@@ -35,39 +49,27 @@ Byte mapping423(char value) {
 void b3tob4(UINT block, char ascii[5], int padding) {
     UINT getmask = 0x00FC0000;
 
-    ascii[0] = mapping324((block & getmask) >> 18);
-    ascii[1] = mapping324((block & (getmask >> 6)) >> 12);
-    if(padding < -1)
-        ascii[2] = '=';
-    else
-        ascii[2] = mapping324((block & (getmask >> 12)) >> 6);
-    if(padding < 0)
-        ascii[3] = '=';
-    else
-        ascii[3] = mapping324(block & (getmask >> 18));
+    ascii[0] = map_enc((block & getmask) >> 18);
+    ascii[1] = map_enc((block & (getmask >> 6)) >> 12);
+    ascii[2] = padding < -1 ? '=' : map_enc((block & (getmask >> 12)) >> 6);
+    ascii[3] = padding < 0 ? '=' : map_enc(block & (getmask >> 18));
     ascii[4] = 0;
 }
-
-void b4tob3(UINT block, Byte ascii[4], int padding) {
+void b4tob3(UINT block, Byte binary[4]) {
     UINT getmask = 0x00FF0000;
 
-    ascii[0] = mapping423((block & getmask) >> 16);
-    ascii[1] = mapping423((block & (getmask >> 8)) >> 8);
-    ascii[2] = mapping423((block & (getmask >> 16)));
-    ascii[3] = 0;
+    binary[0] = (block & getmask) >> 16;
+    binary[1] = (block & (getmask >> 8)) >> 8;
+    binary[2] = block & (getmask >> 16);
+    binary[3] = 0;
 }
 
-void encoding(char str[]) {
+void encoding(Byte *str, char *output) {
     int i=0;
-    int buff_size;
     int str_size;
     UINT block;
-    char *buff;
 
     str_size = strlen(str);
-    buff_size = ceil(sizeof(char) * (str_size * 1.2));
-    buff = (char*)malloc(buff_size);
-    memset(buff, 0, buff_size);
 
     while(i<str_size) {
         block = 0;
@@ -76,45 +78,58 @@ void encoding(char str[]) {
         block = block | str[i++];
         block = block << 8;
         block = block | str[i++];
-        b3tob4(block, buff+((i-3)/3*4), str_size-i);
+        b3tob4(block, output+((i-3)/3*4), str_size-i);
     }
-
-    printf("%s\n", buff);
-    free(buff);
 }
-
-void decoding(char str[]) {
+void decoding(char *str, Byte *output) {
     int i=0;
-    int buff_size;
-    int str_size;
     UINT block;
-    char *buff;
+    int str_size;
 
     str_size = strlen(str);
-    buff_size = ceil(sizeof(char) * (str_size * 1.2));
-    buff = (char*)malloc(buff_size);
-    memset(buff, 0, buff_size);
 
     while(i<str_size) {
         block = 0;
-        block = str[i++];
+        block = map_dec(str[i++]);
         block = block << 6;
-        block = block | str[i++];
+        block = block | map_dec(str[i++]);
         block = block << 6;
-        block = block | str[i++];
+        if(str[i] != '=') {
+            block = block | map_dec(str[i++]);
+        }
+        else {
+            i++;
+        }
         block = block << 6;
-        block = block | str[i++];
-        b3tob4(block, buff+((i-3)/3*4));
+        if(str[i] != '=') {
+            block = block | map_dec(str[i++]);
+        }
+        else {
+            i++;
+        }
+        b4tob3(block, output+((i-4)/4*3));
     }
-
-    printf("%s\n", buff);
-    free(buff);
 }
 
 int main(int argc, char *argv[]) {
-    char *text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    char *buff;// = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    Byte *decode;
+    int str_size, buff_size;
 
-    encoding(argv[1]);
+    str_size = strlen(argv[1]);
+    // buff size set
+    buff_size = ceil(sizeof(char) * (str_size * 1.2));
+    buff = (char*)malloc(buff_size);
+    memset(buff, 0, buff_size);
+    // decode size set
+    decode = (Byte*)malloc(sizeof(char) * str_size);
+    memset(decode, 0, str_size);
+
+
+    encoding(argv[1], buff);
+    printf("%s\n", buff);
+    decoding(buff, decode);
+    printf("%s\n", decode);
 
     return 0;
 }
