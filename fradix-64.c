@@ -66,44 +66,34 @@ void b4tob3(UINT block, Byte binary[4]) {
 
 void f_r64_encode(FILE *file, FILE *output) {
     int size;
-    char o_block[5];
+    char o_block[5] ={0,};
     UINT block = 0;
 
-    while(size=fread(&block, 1, 3, file)) {
+    while(size = fread(&block, 1, 3, file)) {
         block = (block & 0x000000FF) << 16 | (block & 0x0000FF00) | (block & 0x00FF0000) >> 16;
-        print_bin("block : ", block);
         b3tob4(block, o_block, size);
         fputs(o_block, output);
         block = 0;
     }
 }
-void f_r64_decode(char *str, Byte *output) {
-    int i=0;
-    UINT block;
-    int str_size;
+void f_r64_decode(FILE *file, FILE *output) {
+    char i_block[5] = {0,};
+    Byte o_block[4] = {0,};
+    UINT block = 0;
 
-    str_size = strlen(str);
-
-    while(i<str_size) {
+    while(fread(i_block, 1, 4, file)) {
         block = 0;
-        block = map_dec(str[i++]);
+        block = map_dec(i_block[0]);
         block = block << 6;
-        block = block | map_dec(str[i++]);
+        block = block | map_dec(i_block[1]);
         block = block << 6;
-        if(str[i] != '=') {
-            block = block | map_dec(str[i++]);
-        }
-        else {
-            i++;
-        }
+        if(i_block[2] != '=')
+            block = block | map_dec(i_block[2]);
         block = block << 6;
-        if(str[i] != '=') {
-            block = block | map_dec(str[i++]);
-        }
-        else {
-            i++;
-        }
-        b4tob3(block, output+((i-4)/4*3));
+        if(i_block[3] != '=')
+            block = block | map_dec(i_block[3]);
+        b4tob3(block, o_block);
+        fwrite(o_block, 1, 3, output);
     }
 }
 
@@ -113,14 +103,14 @@ int main(int argc, char *argv[]) {
     file = fopen(argv[1], "rb");
     encode = fopen("encode.txt", "w");
     f_r64_encode(file, encode);
-
-    // encode = fopen("encode.txt", "r");
-    // decode = fopen("decode", "wb");
-    // f_r64_decode(encode, decode);
-
     fclose(file);
     fclose(encode);
-    // fclose(decode);
+
+    encode = fopen("encode.txt", "r");
+    decode = fopen("decode.bin", "wb");
+    f_r64_decode(encode, decode);
+    fclose(encode);
+    fclose(decode);
 
     return 0;
 }
