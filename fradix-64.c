@@ -21,23 +21,6 @@
 #define Byte unsigned char
 
 
-void print_bin(char *str, UINT data) { // data를 이진수 문자열로 출력한다.
-    int i;
-
-    printf("%s", str);
-    for(i=sizeof(UINT)*8-1; i>=0; i--) { // data를 이진 문자로 출력한다.
-        if(data & ((int)pow(2, i)))
-            printf("%d", 1);
-        else
-            printf("%d", 0);
-
-        if(i%4==0)
-            printf(" ");
-    } // End for
-    printf("\n");
-} // End print_bin
-
-
 char map_enc(Byte value) { // 인코딩용 맵핑
     if (value < 26)
         return 'A' + value;
