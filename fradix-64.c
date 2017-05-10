@@ -1,10 +1,11 @@
-//
+// ===
 // Title   : radix64 file mode
 // Auth    : 전자상거래보안 6조
 // Date    : 2017-04-22
 // Version : 1.0
+// Enviroment  : Windows 10 Pro 64bit, GCC 5.3.0
 // Description : radix-64(base64) 인코딩, 디코딩 프로그램 파일 버전
-//
+// ===
 
 // Header
 #include <stdio.h>
