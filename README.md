@@ -7,7 +7,7 @@ Radix-64 인코딩/디코딩 프로그램.
 `> ra.exe Test입니다.`
 
 결과 1
-`VGVzdMDUtM+02S4=`
+`VGVzdMDUtM+02S4=`z
 `Test입니다.`
 
 예시 2

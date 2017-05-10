@@ -1,11 +1,11 @@
-/***************************************************************/
-/* Title   : radix64 file mode                                 */
-/* Auth    : 전자상거래보안 6조                                */
-/* Date    : 2017-04-22                                        */
-/* Version : 1.0                                               */
-/* Description : radix-64(base64) 인코딩, 디코딩 프로그램 파일 */
-/*               버전                                          */
-/***************************************************************/
+/********************************************************************/
+/* Title   : radix64 file mode                                      */
+/* Auth    : 전자상거래보안 6조                                     */
+/* Date    : 2017-04-22                                             */
+/* Version : 1.0                                                    */
+/* Description : radix-64(base64) 인코딩, 디코딩 프로그램 파일 버전 */
+/*                                                                  */
+/********************************************************************/
 // Header
 #include <stdio.h>
 #include <string.h>
@@ -15,12 +15,13 @@
 // if macro
 #define ENCODING 1
 #define DECODING 1
+#define USE_PRINTBIN 0
 
 // data type macro
 #define UINT unsigned int
 #define Byte unsigned char
 
-
+#if USE_PRINTBIN
 void print_bin(char *str, UINT data) { // data를 이진수 문자열로 출력한다.
     int i;
 
@@ -36,7 +37,7 @@ void print_bin(char *str, UINT data) { // data를 이진수 문자열로 출력�
     } // End for
     printf("\n");
 } // End print_bin
-
+#endif
 
 char map_enc(Byte value) { // 인코딩용 맵핑
     if (value < 26)
@@ -91,6 +92,7 @@ void f_r64_encode(FILE *file, FILE *output) { // 파일 기술자를 읽어서 �
     UINT block = 0;
 
     while(size = fread(&block, 1, 3, file)) {
+        // fread가 한 변수에 들어가면서 역순으로 삽입 따라서 다시 역순으로 뒤집어 줌.
         block = (block & 0x000000FF) << 16 | (block & 0x0000FF00) | (block & 0x00FF0000) >> 16;
         b3tob4(block, o_block, size);
         fputs(o_block, output);
